@@ -1,0 +1,30 @@
+name: customer_policies
+description: Policies owned by a named customer (partial name match, e.g. John → John Smith).
+params:
+  - name: customer_name
+    required: true
+    type: string
+sql: |
+  SELECT
+    p.policy_id,
+    p.product_type,
+    p.status,
+    p.premium_amount,
+    c.full_name,
+    c.customer_id
+  FROM customers c
+  JOIN policies p ON p.customer_id = c.customer_id
+  WHERE c.full_name ILIKE '%%' || %(customer_name)s || '%%'
+  ORDER BY p.policy_id
+allowed_roles:
+  - agent
+  - adjuster
+  - manager
+response_fields:
+  - policy_id
+  - product_type
+  - status
+  - premium_amount
+  - full_name
+  - customer_id
+result_mode: many
