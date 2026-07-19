@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth_router, logs_router, tools_router
+from app.api import ask_router, auth_router, logs_router, tools_router
 from app.db import check_db
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(ask_router)
 app.include_router(tools_router)
 app.include_router(logs_router)
 
