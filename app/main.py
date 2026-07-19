@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI
 
+from app.db import check_db
+
 app = FastAPI(
     title="Enterprise AI Insurance Assistant",
     description="POC: React · FastAPI · Bedrock Agent · Semantic Layer · PostgreSQL",
@@ -11,5 +13,7 @@ app = FastAPI(
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    """Liveness check for local demos."""
-    return {"status": "ok"}
+    """Liveness + DB connectivity for local demos."""
+    payload: dict[str, str] = {"status": "ok"}
+    payload.update(check_db())
+    return payload
