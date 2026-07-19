@@ -1,0 +1,29 @@
+name: policy_premium
+description: Premium amount for a specific policy ID.
+params:
+  - name: policy_id
+    required: true
+    type: string
+sql: |
+  SELECT
+    p.policy_id,
+    p.premium_amount,
+    p.product_type,
+    p.status,
+    c.full_name,
+    c.customer_id
+  FROM policies p
+  JOIN customers c ON c.customer_id = p.customer_id
+  WHERE p.policy_id = %(policy_id)s
+allowed_roles:
+  - agent
+  - adjuster
+  - manager
+response_fields:
+  - policy_id
+  - premium_amount
+  - product_type
+  - status
+  - full_name
+  - customer_id
+result_mode: one

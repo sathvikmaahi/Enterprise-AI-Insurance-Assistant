@@ -1,0 +1,44 @@
+name: claim_summary
+description: Claim details for a policy ID and/or customer name (at least one required).
+params:
+  - name: policy_id
+    required: false
+    type: string
+  - name: customer_name
+    required: false
+    type: string
+require_one_of:
+  - policy_id
+  - customer_name
+sql: |
+  SELECT
+    cl.claim_id,
+    cl.policy_id,
+    cl.status,
+    cl.description,
+    cl.amount,
+    cl.filed_date,
+    c.full_name,
+    c.customer_id
+  FROM claims cl
+  JOIN policies p ON p.policy_id = cl.policy_id
+  JOIN customers c ON c.customer_id = p.customer_id
+  WHERE (%(policy_id)s::text IS NULL OR p.policy_id = %(policy_id)s)
+    AND (
+      %(customer_name)s::text IS NULL
+      OR c.full_name ILIKE '%%' || %(customer_name)s || '%%'
+    )
+  ORDER BY cl.filed_date DESC, cl.claim_id
+allowed_roles:
+  - adjuster
+  - manager
+response_fields:
+  - claim_id
+  - policy_id
+  - status
+  - description
+  - amount
+  - filed_date
+  - full_name
+  - customer_id
+result_mode: many

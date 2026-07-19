@@ -1,0 +1,31 @@
+name: open_claims
+description: All claims with status OPEN.
+params: []
+sql: |
+  SELECT
+    cl.claim_id,
+    cl.policy_id,
+    cl.status,
+    cl.description,
+    cl.amount,
+    cl.filed_date,
+    c.full_name,
+    c.customer_id
+  FROM claims cl
+  JOIN policies p ON p.policy_id = cl.policy_id
+  JOIN customers c ON c.customer_id = p.customer_id
+  WHERE cl.status = 'OPEN'
+  ORDER BY cl.filed_date DESC, cl.claim_id
+allowed_roles:
+  - adjuster
+  - manager
+response_fields:
+  - claim_id
+  - policy_id
+  - status
+  - description
+  - amount
+  - filed_date
+  - full_name
+  - customer_id
+result_mode: many
