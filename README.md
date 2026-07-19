@@ -398,54 +398,9 @@ npm run dev
 
 ---
 
-## 17. Configuration (Expected)
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `AWS_REGION` | e.g. `us-east-1` |
-| `BEDROCK_AGENT_ID` | Bedrock Agent ID |
-| `BEDROCK_AGENT_ALIAS_ID` | Agent alias used for invoke |
-| `BEDROCK_FALLBACK_MODEL_ID` | Model for Converse fallback path |
-| `LOG_LEVEL` | `INFO` / `DEBUG` |
-| `DEMO_AUTH_SECRET` | Signing secret for demo sessions |
-| `VITE_API_BASE_URL` | React → FastAPI base URL (e.g. `http://localhost:8000`) |
 
-Never commit real secrets. Use `.env` (gitignored).
+
+
 
 ---
-
-## 18. Security Notes
-
-- Bedrock / the Agent never receives database credentials.  
-- Only parameterized SQL from the semantic layer is executed.  
-- RBAC is enforced in the API before results return.  
-- Guardrails block unsafe intents.  
-- Audit logs support “who asked what, and what ran.”  
-
----
-
-## 19. Roadmap
-
-| Phase | Focus |
-|---|---|
-| **Phase 1 (this POC)** | React + FastAPI + Bedrock Agent + semantic layer + RDS Postgres + RBAC + logs |
-| **Phase 2** | Databricks connector behind the same semantic interface |
-| **Phase 3** | Cognito, private networking (no public RDS), CloudWatch dashboards, stronger Guardrails |
-
----
-
-## 20. Presentation Talking Points
-
-- “Employees ask business questions; they don’t write SQL.”  
-- “Bedrock Agent orchestrates; the semantic layer governs meaning and SQL.”  
-- “Same pattern scales to Databricks later without rewriting the assistant.”  
-- “Security is layered: auth → guardrails → RBAC → parameterized queries → audit logs.”  
-
----
-
-## License / Status
-
-**Status:** POC / interview demo  
-**Audience:** Hiring manager / architecture walkthrough  
-**Not production-ready** — intentionally scoped for clarity and reliability.
