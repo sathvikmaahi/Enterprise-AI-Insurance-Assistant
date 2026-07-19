@@ -1,0 +1,41 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c6570;
+}
+
+.shell h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  line-height: 1.15;
+  color: #0f1720;
+}
+
+.lede {
+  margin: 0 0 1.5rem;
+  color: #3d4754;
+  line-height: 1.5;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #3d4754;
+}
+
+.status span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #0f1720;
+}
