@@ -6,7 +6,7 @@ Bootstrap the Enterprise AI Insurance Assistant backend so the team can run a Fa
 ## What this branch adds
 - FastAPI app entrypoint with `GET /health`
 - `pyproject.toml` / `uv.lock` dependency management
-- Root project documentation (`README.md`, `techstack.md`)
+- Root `README.md` and `docs/techstack.md`
 - Baseline `.gitignore` and `.env.example`
 - Smoke test for `/health`
 

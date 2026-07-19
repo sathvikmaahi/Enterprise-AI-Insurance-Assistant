@@ -6,7 +6,7 @@ Connect the API to Amazon RDS PostgreSQL with a pooled client, schema/seed for i
 ## What this branch adds
 - `app/db` connection pool + `check_db()`
 - `db/schema.sql`, `db/seed.sql`, `db/generate_seed.py`
-- `infra/rds-notes.md` setup notes
+- `infra/rds/notes.md` setup notes
 - `/health` returns `db` status
 - DB-focused tests
 

@@ -4,6 +4,24 @@
   box-sizing: border-box;
 }
 
+:root {
+  --mist: #e7edf3;
+  --ink: #0c1b2a;
+  --paper: #f7fafc;
+  --teal: #0f766e;
+  --teal-hover: #0d9488;
+  --amber: #b45309;
+  --muted: #4a5d73;
+  --line: #c5d0dc;
+  --deny: #9f1239;
+  --allow: #0f766e;
+  --blocked: #b45309;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --shadow: 0 18px 40px rgba(12, 27, 42, 0.08);
+}
+
 html,
 body,
 #root {
@@ -12,11 +30,53 @@ body,
 }
 
 body {
-  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
+  color: var(--ink);
   background:
-    radial-gradient(ellipse 80% 50% at 10% 0%, #dce8f5 0%, transparent 55%),
-    radial-gradient(ellipse 70% 45% at 100% 100%, #e8efe6 0%, transparent 50%),
-    #f3f5f7;
-  color: #0f1720;
+    radial-gradient(ellipse 90% 55% at 8% -10%, #c9d9ea 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 110%, #cfe3df 0%, transparent 50%),
+    var(--mist);
   -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

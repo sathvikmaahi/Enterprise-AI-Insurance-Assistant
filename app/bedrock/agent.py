@@ -20,6 +20,7 @@ from app.bedrock.runner import (
     ToolRunnerError,
     run_concept,
 )
+from app.bedrock.tool_payload import build_success_payload, enrich_answer_if_needed
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +68,14 @@ def _execute_return_control(
     return_control: dict[str, Any],
     user: CurrentUser,
     tools_used: list[str],
-) -> dict[str, Any]:
-    """Build sessionState with function results for the next invoke_agent call."""
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Build sessionState with function results for the next invoke_agent call.
+
+    Returns (session_state, last_success_payload) so hollow final answers can be enriched.
+    """
     invocation_id = return_control.get("invocationId")
     results: list[dict[str, Any]] = []
+    last_success: dict[str, Any] | None = None
 
     for item in return_control.get("invocationInputs") or []:
         function_input = item.get("functionInvocationInput") or {}
@@ -79,16 +84,13 @@ def _execute_return_control(
         params = _params_from_invocation(function_input)
 
         if not function_name:
-            body = {"error": "Missing function name in return control"}
+            body: dict[str, Any] = {"error": "Missing function name in return control"}
         else:
             tools_used.append(function_name)
             try:
                 result = run_concept(concept=function_name, params=params, user=user)
-                body = {
-                    "concept": result.concept,
-                    "row_count": result.row_count,
-                    "rows": result.rows,
-                }
+                body = build_success_payload(result)
+                last_success = body
             except ToolAccessDenied as exc:
                 body = {
                     "error": "Access denied",
@@ -119,7 +121,7 @@ def _execute_return_control(
     }
     if invocation_id:
         session_state["invocationId"] = invocation_id
-    return session_state
+    return session_state, last_success
 
 
 def _consume_completion(
@@ -163,6 +165,7 @@ def invoke_agent(
     }
     input_text = question
     final_answer = ""
+    last_success_payload: dict[str, Any] | None = None
 
     try:
         for _ in range(MAX_RETURN_CONTROL_ROUNDS + 1):
@@ -187,9 +190,14 @@ def invoke_agent(
             if return_control is None:
                 if not final_answer:
                     raise AgentInvokeError("Agent returned empty answer")
-                return AgentResult(answer=final_answer, tools_used=tools_used)
+                enriched = enrich_answer_if_needed(final_answer, last_success_payload)
+                return AgentResult(answer=enriched, tools_used=tools_used)
 
-            session_state = _execute_return_control(return_control, user, tools_used)
+            session_state, success_payload = _execute_return_control(
+                return_control, user, tools_used
+            )
+            if success_payload is not None:
+                last_success_payload = success_payload
             # Continuation uses empty input; results are in sessionState.
             input_text = ""
 

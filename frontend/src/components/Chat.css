@@ -1,0 +1,135 @@
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  background: transparent;
+}
+
+.chat__thread {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.25rem 0 1rem;
+  min-height: 16rem;
+}
+
+.chat__empty {
+  margin: auto 0;
+  max-width: 28rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.bubble {
+  max-width: min(100%, 40rem);
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  animation: bubble-in 0.28s ease-out;
+}
+
+.bubble--user {
+  align-self: flex-end;
+  background: #e8f3f1;
+  border-color: #9fd0c8;
+}
+
+.bubble--assistant {
+  align-self: flex-start;
+}
+
+.bubble--error {
+  align-self: stretch;
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: var(--deny);
+}
+
+.bubble__text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.bubble__meta {
+  margin: 0.65rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.path-chip {
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.path-chip--agent {
+  color: var(--teal);
+}
+
+.path-chip--fallback {
+  color: var(--amber);
+}
+
+.bubble__fallback {
+  color: var(--amber);
+}
+
+.chat__thinking {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.chat__composer {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.chat__composer input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 2px;
+}
+
+.chat__composer input:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.35);
+  outline-offset: 1px;
+  border-color: var(--teal);
+}
+
+.chat__composer button {
+  padding: 0.75rem 1.15rem;
+  border: none;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 2px;
+}
+
+.chat__composer button:hover:not(:disabled) {
+  background: var(--teal-hover);
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

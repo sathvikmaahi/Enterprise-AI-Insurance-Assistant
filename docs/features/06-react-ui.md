@@ -1,15 +1,16 @@
 # Feature: React Chat UI (Phase 5)
 
 ## Purpose
-Provide a Vite + React demo UI for login, natural-language ask, role visibility, and recent audit logs against the FastAPI backend.
+Interview-polished Vite + React demo UI: full-screen login, chat via `/ask`, role badge, suggested prompts, path/fallback meta, and always-visible audit logs.
 
 ## What this branch adds
-- `frontend/` React (Vite) app
-- API client pointed at `VITE_API_BASE_URL`
-- UI README and frontend env example
+- Auth-gated SPA (`LoginScreen` → three-zone `AppShell`)
+- `api.js`: `login`, `ask`, `getLogs` (+ health)
+- Session in `localStorage` with explicit logout
+- UI README and `VITE_API_BASE_URL` via `.env.example`
 
 ## Depends on
-`feat/05-bedrock-ask`
+`feat/05-bedrock-ask` (Phase 4 `/ask` + Phase 3 auth/logs)
 
 ## How to run
 ```bash

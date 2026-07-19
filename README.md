@@ -238,47 +238,38 @@ Examples enforced in app and/or Bedrock Guardrails:
 
 ---
 
-## 10. Target Project Structure (Planned)
+## 10. Project Structure
 
 ```text
 Semantic-layer/
 ├── README.md
+├── .env.example
+├── pyproject.toml / uv.lock
 ├── docs/
-│   ├── architecture.md
-│   ├── demo-script.md
+│   ├── README.md                   # doc index
+│   ├── techstack.md
+│   ├── features/                   # phase feature notes (01–06)
 │   └── superpowers/specs/          # design specs
-├── frontend/                       # React (Vite) app
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── index.html
-│   └── src/
-│       ├── App.jsx                 # login + chat shell
-│       ├── api.js                  # calls FastAPI
-│       ├── components/             # Chat, Login, LogsPanel
-│       └── main.jsx
+├── frontend/                       # React (Vite) UI
+│   ├── src/
+│   │   ├── App.jsx                 # auth gate
+│   │   ├── api.js
+│   │   ├── auth/session.js
+│   │   └── components/             # Login, Chat, LogsPanel, …
+│   └── README.md
 ├── app/                            # FastAPI backend
-│   ├── main.py                     # FastAPI entry
-│   ├── auth/                       # demo login + roles
-│   ├── api/                        # /ask, /logs, /health
-│   ├── bedrock/                    # Agent invoke + fallback
+│   ├── main.py
+│   ├── api/                        # /auth, /ask, /tools, /logs
+│   ├── auth/ · rbac/ · guardrails/
+│   ├── bedrock/                    # Agent + Converse fallback
 │   ├── semantic/                   # concepts YAML + SQL resolver
-│   ├── db/                         # Postgres access
-│   ├── rbac/                       # permission checks
-│   ├── guardrails/                 # request filters
-│   └── logging/                    # audit trail
-├── db/
-│   ├── schema.sql
-│   └── seed.sql
+│   ├── db/ · logging/
+├── db/                             # schema.sql · seed.sql
 ├── infra/
-│   ├── rds-notes.md                # RDS setup checklist (instance, SG, URL)
-│   └── bedrock/                    # agent/action-group notes
-├── tests/
-├── pyproject.toml                  # Python project + deps (uv)
-├── uv.lock                         # locked dependency versions
-└── .env.example
+│   ├── rds/notes.md
+│   └── bedrock/notes.md
+└── tests/
 ```
-
-> Folder layout may be adjusted slightly during implementation; this is the intended shape.
 
 ---
 
