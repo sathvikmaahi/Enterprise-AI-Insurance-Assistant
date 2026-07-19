@@ -18,6 +18,7 @@ from app.bedrock.runner import (
     ToolRunnerError,
     run_concept,
 )
+from app.bedrock.tool_payload import build_success_payload, enrich_answer_if_needed
 from app.bedrock.tool_specs import converse_tool_config
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,7 @@ def invoke_fallback(
     factory = client_factory or _default_client
     client = factory()
     tools_used: list[str] = []
+    last_success_payload: dict[str, Any] | None = None
     messages: list[dict[str, Any]] = [
         {"role": "user", "content": [{"text": question}]},
     ]
@@ -108,7 +110,8 @@ def invoke_fallback(
                 answer = _extract_text(output)
                 if not answer:
                     raise FallbackInvokeError("Converse returned empty answer")
-                return FallbackResult(answer=answer, tools_used=tools_used)
+                enriched = enrich_answer_if_needed(answer, last_success_payload)
+                return FallbackResult(answer=enriched, tools_used=tools_used)
 
             if stop_reason != "tool_use":
                 raise FallbackInvokeError(f"Unexpected Converse stopReason: {stop_reason}")
@@ -127,11 +130,8 @@ def invoke_fallback(
                 tools_used.append(name)
                 try:
                     result = run_concept(concept=name, params=params, user=user)
-                    payload = {
-                        "concept": result.concept,
-                        "row_count": result.row_count,
-                        "rows": result.rows,
-                    }
+                    payload = build_success_payload(result)
+                    last_success_payload = payload
                     tool_result_content.append(
                         _tool_result_block(tool_use_id, payload, status="success")
                     )

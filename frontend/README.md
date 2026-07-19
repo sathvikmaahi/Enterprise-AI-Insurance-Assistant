@@ -1,16 +1,43 @@
-# React + Vite
+# Frontend — Enterprise AI Insurance Assistant
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Vite + React demo UI for Phase 5: login, chat (`POST /ask`), role badge, and audit logs.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+# Terminal 1 — API
+cd ..
+uv run uvicorn app.main:app --reload --port 8000
 
-## React Compiler
+# Terminal 2 — UI
+npm install
+npm run dev
+# open http://localhost:5173
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Config
 
-## Expanding the Oxlint configuration
+In local dev, leave `VITE_API_BASE_URL` empty (default). Vite proxies `/ask`, `/auth`, `/logs`, etc. to `http://127.0.0.1:8000`, which avoids `localhost` / CORS fetch failures in the browser.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Only set an absolute URL if you host the built UI separately from FastAPI:
+
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+## Demo users
+
+| Username   | Password       | Role     |
+|------------|----------------|----------|
+| `agent`    | `agent123`     | agent    |
+| `adjuster` | `adjuster123`  | adjuster |
+| `manager`  | `manager123`   | manager  |
+
+Session is stored in `localStorage` (`insurance_assistant_session`). Use **Log out** to clear it.
+
+## Scripts
+
+- `npm run dev` — Vite dev server
+- `npm run build` — production build
+- `npm run lint` — Oxlint
+- `npm run preview` — preview production build

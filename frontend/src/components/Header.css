@@ -1,0 +1,81 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(247, 250, 252, 0.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+
+.header__brand {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.header__sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header__user {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.header__logout {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.88rem;
+  border-radius: 2px;
+}
+
+.header__logout:hover {
+  border-color: var(--ink);
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px solid transparent;
+}
+
+.role-badge--agent {
+  background: #dbeafe;
+  color: #1e3a5f;
+  border-color: #93c5fd;
+}
+
+.role-badge--adjuster {
+  background: #ccfbf1;
+  color: #115e59;
+  border-color: #5eead4;
+}
+
+.role-badge--manager {
+  background: #e0e7ff;
+  color: #312e81;
+  border-color: #a5b4fc;
+}

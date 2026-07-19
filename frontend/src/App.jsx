@@ -1,42 +1,19 @@
-import { useEffect, useState } from 'react'
-import { getHealth } from './api'
-import './App.css'
+import { useCallback, useState } from 'react'
+import { clearSession, loadSession } from './auth/session'
+import LoginScreen from './components/LoginScreen'
+import AppShell from './components/AppShell'
 
-function App() {
-  const [health, setHealth] = useState('checking…')
+export default function App() {
+  const [session, setSession] = useState(() => loadSession())
 
-  useEffect(() => {
-    let cancelled = false
-
-    getHealth()
-      .then((data) => {
-        if (!cancelled) {
-          setHealth(data.status === 'ok' ? 'API connected' : 'unexpected response')
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setHealth('API offline (start FastAPI on :8000)')
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
+  const handleLogout = useCallback(() => {
+    clearSession()
+    setSession(null)
   }, [])
 
-  return (
-    <main className="shell">
-      <p className="eyebrow">Phase 0 scaffold</p>
-      <h1>Enterprise AI Insurance Assistant</h1>
-      <p className="lede">
-        React · FastAPI · AWS Bedrock Agent · Semantic Layer · PostgreSQL
-      </p>
-      <p className="status">
-        Backend: <span>{health}</span>
-      </p>
-    </main>
-  )
-}
+  if (!session) {
+    return <LoginScreen onLogin={setSession} />
+  }
 
-export default App
+  return <AppShell session={session} onLogout={handleLogout} />
+}

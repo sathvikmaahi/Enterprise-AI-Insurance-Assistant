@@ -94,3 +94,63 @@ def test_agent_return_control_then_answer(monkeypatch) -> None:
     assert client.invoke_agent.call_count == 2
     second_kwargs = client.invoke_agent.call_args_list[1].kwargs
     assert "returnControlInvocationResults" in second_kwargs["sessionState"]
+    body = second_kwargs["sessionState"]["returnControlInvocationResults"][0][
+        "functionResult"
+    ]["responseBody"]["TEXT"]["body"]
+    assert "formatted_preview" in body
+    assert "P1001" in body
+
+
+def test_agent_enriches_hollow_final_answer(monkeypatch) -> None:
+    monkeypatch.setenv("BEDROCK_AGENT_ID", "AGENT")
+    monkeypatch.setenv("BEDROCK_AGENT_ALIAS_ID", "ALIAS")
+    monkeypatch.setenv("BEDROCK_FORCE_FALLBACK", "false")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+
+    user = CurrentUser(username="agent", role="agent")
+    client = MagicMock()
+    return_control_events = [
+        {
+            "returnControl": {
+                "invocationId": "inv-1",
+                "invocationInputs": [
+                    {
+                        "functionInvocationInput": {
+                            "actionGroup": "SemanticTools",
+                            "function": "coverage_by_type",
+                            "parameters": [
+                                {
+                                    "name": "coverage_type",
+                                    "type": "string",
+                                    "value": "windshield",
+                                }
+                            ],
+                        }
+                    }
+                ],
+            }
+        }
+    ]
+    final_events = [
+        {"chunk": {"bytes": b"Here are the policies that cover windshield damage:"}},
+    ]
+    client.invoke_agent.side_effect = [
+        {"completion": iter(return_control_events)},
+        {"completion": iter(final_events)},
+    ]
+    fake_run = ToolRunResult(
+        concept="coverage_by_type",
+        role="agent",
+        rows=[{"policy_id": "P1001", "full_name": "John Smith"}],
+        row_count=1,
+        sql="SELECT 1",
+        params={"coverage_type": "windshield"},
+    )
+    with patch("app.bedrock.agent.run_concept", return_value=fake_run):
+        result = invoke_agent(
+            "Which policies cover windshield damage?",
+            user,
+            client_factory=lambda: client,
+        )
+    assert "P1001" in result.answer
+    assert "John Smith" in result.answer

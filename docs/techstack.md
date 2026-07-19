@@ -76,7 +76,7 @@ React (Vite)  →  FastAPI  →  Amazon Bedrock Agent
 | Database name | `insurance` |
 | Schema | `db/schema.sql` — customers, policies, coverages, claims |
 | Seed | `db/seed.sql` (generated via `db/generate_seed.py`) |
-| Setup notes | `infra/rds-notes.md` |
+| Setup notes | `infra/rds/notes.md` |
 | Secrets | Local `.env` only (never commit) |
 
 ---
