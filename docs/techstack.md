@@ -9,10 +9,12 @@ POC that answers insurance questions in natural language via a **semantic layer*
 ```text
 React (Vite)  →  FastAPI  →  Amazon Bedrock Agent
                     │                │
-                    │         Action Group (tools)
+                    │         Action group:
+                    │         return control (POC)
+                    │         or Lambda (hosted)
                     ▼                ▼
-              Semantic Layer  ←──────┘
-                    │
+              Semantic Layer  ←──────┘  (tools run in FastAPI / Lambda,
+                    │                    not via Agent → localhost HTTP)
                     ▼
          Amazon RDS (PostgreSQL)
 ```
@@ -33,7 +35,7 @@ React (Vite)  →  FastAPI  →  Amazon Bedrock Agent
 | AI orchestration | **Amazon Bedrock Agents** | NL understanding + tool/action selection |
 | Foundation model | **Amazon Bedrock** (e.g. Claude / Nova) | Reasoning inside the Agent |
 | Semantic layer | YAML/JSON concepts + Python resolver | Business terms → parameterized SQL |
-| Auth (POC) | Demo users + roles (Cognito-compatible design) | Simulates enterprise SSO/RBAC |
+| Auth (POC) | Demo users + roles (Cognito-compatible design) | Propagates app `{username, role}` for RBAC/audit — not DB user impersonation |
 | Cloud | **AWS** (RDS, Bedrock, IAM; optional CloudWatch) | Managed DB, models, observability |
 | Testing | **pytest** · **httpx** | API / DB unit and smoke tests |
 | Seed data | **Faker** (`db/generate_seed.py`) | Realistic demo data (200 rows/table) |
@@ -86,16 +88,18 @@ React (Vite)  →  FastAPI  →  Amazon Bedrock Agent
 | Item | Notes |
 |---|---|
 | Amazon Cognito | Real SSO; demo auth stands in for now |
-| Bedrock Guardrails | Policy + content safety around Agent replies |
+| Bedrock Guardrails | Harmful content, denied topics, PII detection, I/O filtering — **not** SQL/DB permissions |
 | Databricks / Snowflake | Future warehouses behind the same semantic API |
 | CloudWatch | Optional request/audit metrics and logs |
+
+**Application controls (live):** role auth, tool allowlists, param validation, read-only semantic SQL, direct-SQL rejection (`app/guardrails`), tool-call round limits — see README §9.
 
 ---
 
 ## Why this stack (short)
 
 - **React + Vite** — fast UI for a 2-day POC; clear split from API/Agent work  
-- **FastAPI** — clean REST for the UI and Bedrock action groups  
-- **Bedrock Agents** — orchestration without building a custom agent runtime  
+- **FastAPI** — clean REST for the UI; runs semantic tools under Bedrock **return control** (or behind **Lambda** if hosted)  
+- **Bedrock Agents** — orchestration via action groups; managed Agent does **not** call local FastAPI URLs directly  
 - **Semantic layer** — business concepts map to approved SQL; model never gets DB credentials  
 - **RDS PostgreSQL** — real managed DB for the demo (no local Docker DB)

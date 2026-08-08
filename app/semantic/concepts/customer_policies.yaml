@@ -17,7 +17,7 @@ sql: |
   WHERE c.full_name ILIKE '%%' || %(customer_name)s || '%%'
   ORDER BY p.policy_id
 allowed_roles:
-  - agent
+  - csr
   - adjuster
   - manager
 response_fields:

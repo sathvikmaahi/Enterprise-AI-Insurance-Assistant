@@ -67,7 +67,7 @@ export default function LoginScreen({ onLogin }) {
         </form>
 
         <p className="login__hint">
-          Demo users: <code>agent</code> / <code>adjuster</code> / <code>manager</code>
+          Demo users: <code>csr</code> / <code>adjuster</code> / <code>manager</code>
           {' '}(password: username + <code>123</code>)
         </p>
       </section>

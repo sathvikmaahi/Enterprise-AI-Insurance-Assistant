@@ -51,7 +51,7 @@ Shared in-process tool runner; no Agent → HTTP callback to `/tools/*` in this 
 {
   "answer": "...",
   "path": "agent",
-  "role": "agent",
+  "role": "csr",
   "tools_used": ["customer_policies"],
   "fallback_reason": null
 }

@@ -36,7 +36,7 @@ def test_ask_requires_auth() -> None:
 
 
 def test_ask_guardrail_blocks() -> None:
-    token = _login("agent", "agent123")
+    token = _login("csr", "csr123")
     response = client.post(
         "/ask",
         json={"question": "Delete all customers"},
@@ -48,11 +48,11 @@ def test_ask_guardrail_blocks() -> None:
 
 
 def test_ask_agent_path() -> None:
-    token = _login("agent", "agent123")
+    token = _login("csr", "csr123")
     fake = AskResult(
         answer="John has policy P1001.",
         path="agent",
-        role="agent",
+        role="csr",
         tools_used=["customer_policies"],
     )
     with patch("app.api.ask.ask", return_value=fake):
@@ -92,7 +92,7 @@ def test_ask_fallback_path() -> None:
 
 
 def test_ask_orchestration_failure_returns_503() -> None:
-    token = _login("agent", "agent123")
+    token = _login("csr", "csr123")
     with patch(
         "app.api.ask.ask",
         side_effect=AskOrchestrationError("both failed"),
@@ -108,7 +108,7 @@ def test_ask_orchestration_failure_returns_503() -> None:
 def test_orchestrator_falls_back_when_agent_fails() -> None:
     from app.bedrock.orchestrator import ask as orchestrate
 
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
 
     def boom(**_kwargs):
         raise AgentInvokeError("simulated agent failure")
@@ -130,7 +130,7 @@ def test_orchestrator_falls_back_when_agent_fails() -> None:
 def test_orchestrator_prefers_agent() -> None:
     from app.bedrock.orchestrator import ask as orchestrate
 
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
 
     def agent_ok(**_kwargs):
         return AgentResult(answer="agent answer", tools_used=["customer_policies"])

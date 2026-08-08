@@ -20,7 +20,7 @@ def test_agent_not_configured(monkeypatch) -> None:
     monkeypatch.delenv("BEDROCK_AGENT_ID", raising=False)
     monkeypatch.delenv("BEDROCK_AGENT_ALIAS_ID", raising=False)
     monkeypatch.setenv("BEDROCK_FORCE_FALLBACK", "false")
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
     with pytest.raises(AgentInvokeError, match="not configured"):
         invoke_agent("hello", user)
 
@@ -29,7 +29,7 @@ def test_agent_force_fallback(monkeypatch) -> None:
     monkeypatch.setenv("BEDROCK_AGENT_ID", "A")
     monkeypatch.setenv("BEDROCK_AGENT_ALIAS_ID", "B")
     monkeypatch.setenv("BEDROCK_FORCE_FALLBACK", "true")
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
     with pytest.raises(AgentInvokeError, match="FORCE_FALLBACK"):
         invoke_agent("hello", user)
 
@@ -40,7 +40,7 @@ def test_agent_return_control_then_answer(monkeypatch) -> None:
     monkeypatch.setenv("BEDROCK_FORCE_FALLBACK", "false")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
     client = MagicMock()
 
     return_control_events = [
@@ -75,7 +75,7 @@ def test_agent_return_control_then_answer(monkeypatch) -> None:
 
     fake_run = ToolRunResult(
         concept="customer_policies",
-        role="agent",
+        role="csr",
         rows=[{"policy_id": "P1001"}],
         row_count=1,
         sql="SELECT 1",
@@ -107,7 +107,7 @@ def test_agent_enriches_hollow_final_answer(monkeypatch) -> None:
     monkeypatch.setenv("BEDROCK_FORCE_FALLBACK", "false")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
     client = MagicMock()
     return_control_events = [
         {
@@ -140,7 +140,7 @@ def test_agent_enriches_hollow_final_answer(monkeypatch) -> None:
     ]
     fake_run = ToolRunResult(
         concept="coverage_by_type",
-        role="agent",
+        role="csr",
         rows=[{"policy_id": "P1001", "full_name": "John Smith"}],
         row_count=1,
         sql="SELECT 1",

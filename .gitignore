@@ -37,3 +37,8 @@ Thumbs.db
 # Logs / local
 *.log
 logs/
+
+.claude/
+.cursor/
+CLAUDE.md
+graphify-out/

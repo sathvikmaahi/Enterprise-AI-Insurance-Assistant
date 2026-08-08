@@ -11,8 +11,8 @@ def setup_function() -> None:
 
 def test_record_and_list_newest_first() -> None:
     record(
-        username="agent",
-        role="agent",
+        username="csr",
+        role="csr",
         concept="a",
         params={},
         sql=None,
@@ -51,7 +51,7 @@ def test_ring_buffer_evicts_oldest() -> None:
         for i in range(5):
             record(
                 username="u",
-                role="agent",
+                role="csr",
                 concept=str(i),
                 params={},
                 sql=None,

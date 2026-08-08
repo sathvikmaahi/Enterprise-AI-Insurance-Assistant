@@ -14,7 +14,7 @@ def test_build_success_payload_caps_rows() -> None:
     rows = [{"policy_id": f"P{i}"} for i in range(25)]
     result = ToolRunResult(
         concept="coverage_by_type",
-        role="agent",
+        role="csr",
         rows=rows,
         row_count=25,
         sql="SELECT 1",

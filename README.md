@@ -43,8 +43,8 @@ This is intentionally scoped to **one database** and a **small set of insurance 
 | Bedrock Agent orchestration | Agent decides which tools/actions to call |
 | Semantic mapping | Business terms → approved SQL (not free-form SQL from the LLM) |
 | Ontology / relationships | Customer → Policy → Coverage → Claim |
-| Secure database access | App/DB credentials; model never gets a DB password |
-| RBAC | Agent / Adjuster / Manager see different data |
+| Secure database access | Single app DB credential; model never gets a DB password |
+| Identity & RBAC | App propagates `{username, role}`; concept allow/deny (not DB user impersonation) |
 | Guardrails | Blocks destructive, out-of-scope, or over-broad asks |
 | Logging & observability | Every request: user, role, question, SQL, allow/deny, latency |
 
@@ -55,15 +55,17 @@ This is intentionally scoped to **one database** and a **small set of insurance 
 ```text
 ┌─────────────┐     ┌──────────────────────┐     ┌─────────────────────┐
 │  React UI   │────▶│  FastAPI Backend     │────▶│  Amazon Bedrock     │
-│  (Vite)     │     │  Auth · RBAC · Logs  │     │  Agent + Guardrails │
+│  (Vite)     │     │  Auth · App guardrails│    │  Agent (+ optional  │
+│             │     │  · RBAC · Logs       │     │   Bedrock Guardrails)│
 └─────────────┘     └──────────┬───────────┘     └──────────┬──────────┘
                                │                            │
-                               │                   Action Group (tools)
+                               │              Action group (return control
+                               │              or Lambda — not localhost HTTP)
                                │                            │
                                ▼                            ▼
                     ┌──────────────────────┐     ┌─────────────────────┐
-                    │  Semantic Layer      │◀────│  Agent invokes API  │
-                    │  Concepts → SQL      │     │  /tools/* endpoints │
+                    │  Semantic Layer      │◀────│  FastAPI runs tools │
+                    │  Concepts → SQL      │     │  in-process (POC)   │
                     └──────────┬───────────┘     └─────────────────────┘
                                │
                                ▼
@@ -77,16 +79,18 @@ Future (Phase 2):
                  ──▶ Snowflake (optional)
 ```
 
+A managed Bedrock Agent **cannot** call your laptop’s FastAPI URLs. This POC uses **return control**: the Agent requests a tool; FastAPI executes it locally and sends the result back. Production alternatives are **Lambda** (or another publicly reachable executor) wired to the action group — not direct HTTP to `localhost`.
+
 ### Request lifecycle (demo narrative)
 
-1. User signs in (demo auth simulating Cognito roles).
+1. User signs in (demo auth simulating Cognito roles) → FastAPI issues a session with `{username, role}`.
 2. User asks a natural-language question.
-3. FastAPI checks auth, basic guardrails, and forwards to the **Bedrock Agent**.
-4. Agent selects an action (e.g. lookup policy, list open claims).
-5. FastAPI **semantic layer** resolves the business concept and builds **parameterized SQL**.
-6. RBAC filters rows/columns the role is allowed to see.
-7. PostgreSQL returns data; Agent/API formats a business-friendly answer.
-8. Request is logged for audit and demo observability.
+3. FastAPI checks auth, basic guardrails, and forwards to the **Bedrock Agent**, attaching that **application identity context** (e.g. session attributes) — not a per-user Postgres login.
+4. Agent selects a tool (e.g. lookup policy, list open claims) and **returns control** to FastAPI (or would invoke **Lambda** in a hosted setup).
+5. FastAPI enforces **concept-level RBAC** from the propagated role, then the **semantic layer** builds **parameterized SQL**.
+6. Queries run with the **shared application DB credential** (connection pool). This is **not** database-level user impersonation (`SET ROLE` / per-user DB roles / RLS-as-that-user).
+7. PostgreSQL returns data; FastAPI resumes the Agent session with tool results and formats a business-friendly answer.
+8. Request is logged for audit (`who` = app username/role, plus concept/SQL/decision).
 
 ---
 
@@ -101,7 +105,7 @@ Future (Phase 2):
 | Semantic layer | YAML/JSON concept definitions + Python resolver | Business terms → validated SQL |
 | Database | **Amazon RDS for PostgreSQL** (cloud-hosted) | Sample insurance data — no local Docker DB |
 | Cloud | **AWS** (Bedrock, RDS, IAM; optional CloudWatch) | Model access, managed DB, observability |
-| Auth (POC) | Demo users + roles (Cognito-compatible design) | Simulates enterprise SSO/RBAC |
+| Auth (POC) | Demo users + roles (Cognito-compatible design) | Application identity context for RBAC/audit (not DB impersonation) |
 | Future warehouse | Databricks connector (stub / roadmap) | Same semantic API, different backend |
 
 ### Why React (Vite)
@@ -115,7 +119,7 @@ Future (Phase 2):
 
 ### Why FastAPI
 
-- Clean REST endpoints for the React app and Bedrock Agent action groups
+- Clean REST for the React app; semantic tools run in-process under Bedrock **return control**
 - Fast to build for a 2-day POC
 - Easy to show RBAC middleware, logging, and tool APIs clearly in an interview
 - CORS-enabled API that React calls during local dev (`localhost:5173` → `localhost:8000`)
@@ -123,8 +127,8 @@ Future (Phase 2):
 ### Why Bedrock Agent (not raw model-only)
 
 - Matches enterprise “agent + tools” storytelling
-- Separates orchestration (Agent) from data access (your APIs)
-- Supports attaching guardrails and action groups managers recognize from AWS docs
+- Separates orchestration (Agent) from data access (your semantic tools)
+- Action groups use **return control** (this POC) or **Lambda**; not direct calls to local FastAPI
 
 ### Why a semantic layer (critical)
 
@@ -135,9 +139,9 @@ The semantic layer owns:
 - Approved business concepts (`open_claim`, `policy_premium`, `windshield_coverage`, …)
 - Join paths and filters
 - Parameter binding
-- Role-aware field visibility
+- Which concepts each **app role** may call (`allowed_roles` in YAML)
 
-Bedrock asks for **concepts**; the semantic layer returns **safe SQL results**.
+Bedrock asks for **concepts**; the semantic layer returns **safe SQL results**. Role checks happen in the API/tool runner using propagated app identity — not by switching the database user.
 
 ### Why Amazon RDS (not local Docker)
 
@@ -156,10 +160,10 @@ Managed Bedrock Agents can be slow to configure and brittle in live demos. This 
 
 | Risk | Mitigation |
 |---|---|
-| Agent/action-group misconfiguration | Keep action contracts tiny (3–5 tools max); document each OpenAPI schema |
+| Agent/action-group misconfiguration | Keep action contracts tiny (3–5 tools max); document return-control function schemas (or Lambda/OpenAPI if hosted) |
 | Hard to debug mid-demo | Structured logs on every tool call; `/health` and `/tools/ping` endpoints |
 | Live Agent failure | **Fallback path**: FastAPI can call the same semantic tools via Bedrock Converse + tool use if Agent invoke fails |
-| Agent invents unsafe SQL | Agent **never** receives DB credentials; only semantic tool endpoints; SQL only generated in semantic layer |
+| Agent invents unsafe SQL | Agent **never** receives DB credentials; only named semantic tools (return control / Lambda); SQL only in the semantic layer |
 | Time pressure | Seed data + fixed demo script; rehearse the 5 questions before presentation |
 
 **Design rule:** Semantic layer is the source of truth. The Agent is the orchestrator, not the database engineer.
@@ -183,7 +187,7 @@ Suggested entities:
 | Customer | customer_id, full_name, email, region |
 | Policy | policy_id, customer_id, product_type, status, premium_amount, start_date, end_date |
 | Coverage | coverage_id, policy_id, coverage_type, limit_amount, deductible |
-| Claim | claim_id, policy_id, status, description, amount, filed_date |
+| Claim | claim_id, policy_id, status, description, amount, filed_date, **claim_details (JSONB)** |
 
 Example demo IDs (illustrative):
 
@@ -203,6 +207,7 @@ Example demo IDs (illustrative):
 | `open_claims` | Claims with status OPEN | `claims` where `status = 'OPEN'` |
 | `coverage_by_type` | Policies that include a coverage type (e.g. windshield) | `policies` ⋈ `coverages` |
 | `claim_summary` | Claim details for a policy/customer | `claims` ⋈ `policies` |
+| `claims_by_damage_type` | Claims filtered by JSON field | `claim_details->>'damage_type'` |
 
 Each concept definition includes:
 
@@ -214,27 +219,53 @@ Each concept definition includes:
 
 ---
 
-## 8. RBAC (Demo Roles)
+## 8. Identity & RBAC (Demo Roles)
 
-| Role | Can do | Cannot do |
-|---|---|---|
-| **Agent** | Lookup assigned/sample customers, policies, premiums, coverages | Broad “all customers” dumps; other regions if scoped |
-| **Adjuster** | Open/in-review claims + related policy context | Customer PII beyond what claim handling needs |
-| **Manager** | Cross-customer read of policies/claims summaries | Destructive operations (none allowed for any role) |
+**How identity works in this POC:** login produces an application session (`username` + `role`). That context is **propagated** through `/ask`, tool execution, Bedrock session attributes, and audit logs. Postgres is accessed with one service `DATABASE_URL` user.
 
-Unauthorized asks return a clear **Access denied** message (good live demo moment).
+**What this is not:** full database-level user impersonation (no per-employee DB accounts, no `SET ROLE` / `SET SESSION AUTHORIZATION`, no Postgres RLS keyed to the end user).
+
+| Role (display) | Role id | Can do | Cannot do |
+|---|---|---|---|
+| **Customer Service Representative** | `csr` | Policies, premiums, coverages | Claim concepts reserved for adjuster/manager |
+| **Adjuster** | `adjuster` | Claim concepts + related policy lookups | Concepts outside `allowed_roles` |
+| **Manager** | `manager` | Broader read concepts (policies/claims summaries) | Destructive operations (none allowed for any role) |
+
+Demo login: `csr` / `csr123` (role id `csr`). Unauthorized concept calls return **Access denied**. Enforcement is **concept-level** (`allowed_roles` in YAML) before SQL runs.
 
 ---
 
-## 9. Guardrails (Basic)
+## 9. Two control layers (do not conflate)
 
-Examples enforced in app and/or Bedrock Guardrails:
+These are **different** layers. Bedrock Guardrails are **not** responsible for SQL validation or database permissions.
 
-- **Allow:** policy lookup, premiums, open claims, coverage questions  
-- **Deny:** `DELETE` / `UPDATE` / schema changes  
-- **Deny:** “show all customers with SSN/email dump” style over-broad PII asks  
-- **Deny:** off-domain questions (stocks, medical advice, etc.)  
-- **Deny:** direct raw SQL from the user
+### Bedrock Guardrails (optional / planned association with the Agent)
+
+Use Amazon Bedrock Guardrails for model I/O safety:
+
+- Harmful content  
+- Denied topics  
+- Sensitive-information detection  
+- Input and output filtering  
+
+Bedrock Guardrails can be associated with agents and can evaluate user inputs and model responses. They do **not** validate SQL execution or enforce DB permissions.
+
+### Application guardrails & controls (this POC — Python / FastAPI)
+
+Use application code for data-path and tool safety:
+
+| Control | Where it lives (conceptually) |
+|---|---|
+| Role authorization | `app/rbac` + concept `allowed_roles` |
+| Tool allowlists | Semantic concepts only (YAML catalog) |
+| Parameter validation | Semantic layer (`params` / `require_one_of`) |
+| Maximum returned records | Application / query policy (keep LIMIT in SQL templates as needed) |
+| Read-only query enforcement | Semantic templates are SELECT-only; no write tools |
+| Direct SQL rejection | `app/guardrails` (blocks raw SQL / destructive phrasing) |
+| Maximum tool calls | Bedrock return-control / Converse loops (`MAX_*` rounds) |
+| Timeout handling | HTTP / client / AWS SDK timeouts around invoke |
+
+Demo question checks in `app/guardrails` also block over-broad PII dumps and off-domain asks before the Agent runs.
 
 ---
 
@@ -278,21 +309,21 @@ Semantic-layer/
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/auth/login` | Demo login; returns session/token + role |
-| `POST` | `/ask` | Send NL question; invokes Bedrock Agent |
+| `POST` | `/ask` | Send NL question; invokes Bedrock Agent (return control) + Converse fallback |
 | `GET` | `/logs` | Recent audit entries for demo panel |
 | `GET` | `/health` | App + DB health |
-| `POST` | `/tools/*` | Action-group endpoints called by Bedrock Agent |
-| `GET` | `/tools/ping` | Agent connectivity check |
+| `POST` | `/tools/*` | Same semantic tools for demos/tests; **not** called by the managed Agent over HTTP |
+| `GET` | `/tools/ping` | Tool connectivity check |
 
-Exact tool names will match semantic concepts (e.g. `/tools/customer_policies`).
+Exact tool names match semantic concepts (e.g. `/tools/customer_policies`). The Bedrock Agent action group uses **return control** (or **Lambda** if you host an executor); it does not HTTP-call these local paths.
 
 ---
 
 ## 12. Demo Script (Tuesday)
 
 1. **Architecture slide** — Auth → Bedrock Agent → Semantic Layer → Postgres; Databricks as Phase 2.  
-2. Login as **Agent** → “What policy does customer John have?” → answer.  
-3. Login as restricted role → same/broad question → **Access denied**.  
+2. Login as **Customer Service Representative** (`csr`) → “What policy does customer John have?” → answer.  
+3. Login as CSR → ask open claims → **Access denied**; switch to adjuster → allowed.  
 4. Ask “Delete all customers” → **blocked by guardrail**.  
 5. “Show all open claims.” → semantic concept → SQL → answer.  
 6. Open **logs** panel → show user, role, concept, SQL, latency.  
@@ -410,9 +441,10 @@ Never commit real secrets. Use `.env` (gitignored).
 
 - Bedrock / the Agent never receives database credentials.  
 - Only parameterized SQL from the semantic layer is executed.  
-- RBAC is enforced in the API before results return.  
+- Identity is **application-context propagation** (`username` / `role` on the request and into tool/Agent paths); the DB connection stays the app service user.  
+- RBAC is **concept-level** allow/deny in the API/tool runner before `resolve()` — not DB user impersonation.  
 - Guardrails block unsafe intents.  
-- Audit logs support “who asked what, and what ran.”  
+- Audit logs support “who asked what, and what ran” using that app identity.  
 
 ---
 
@@ -429,9 +461,9 @@ Never commit real secrets. Use `.env` (gitignored).
 ## 20. Presentation Talking Points
 
 - “Employees ask business questions; they don’t write SQL.”  
-- “Bedrock Agent orchestrates; the semantic layer governs meaning and SQL.”  
+- “Bedrock Agent orchestrates via return control (or Lambda); the semantic layer governs meaning and SQL.”  
 - “Same pattern scales to Databricks later without rewriting the assistant.”  
-- “Security is layered: auth → guardrails → RBAC → parameterized queries → audit logs.”  
+- “Security is layered: app identity context → guardrails → concept RBAC → parameterized queries → audit logs (not DB user impersonation).”  
 
 ---
 

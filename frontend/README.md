@@ -27,11 +27,11 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 ## Demo users
 
-| Username   | Password       | Role     |
-|------------|----------------|----------|
-| `agent`    | `agent123`     | agent    |
-| `adjuster` | `adjuster123`  | adjuster |
-| `manager`  | `manager123`   | manager  |
+| Username   | Password       | Role (id) | Display |
+|------------|----------------|-----------|---------|
+| `csr`      | `csr123`       | `csr`     | Customer Service Representative |
+| `adjuster` | `adjuster123`  | `adjuster`| Adjuster |
+| `manager`  | `manager123`   | `manager` | Manager |
 
 Session is stored in `localStorage` (`insurance_assistant_session`). Use **Log out** to clear it.
 

@@ -16,7 +16,7 @@ sql: |
   JOIN customers c ON c.customer_id = p.customer_id
   WHERE p.policy_id = %(policy_id)s
 allowed_roles:
-  - agent
+  - csr
   - adjuster
   - manager
 response_fields:

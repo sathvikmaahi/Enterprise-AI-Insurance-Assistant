@@ -4,6 +4,8 @@ POC path: **Agent first (return-control)** → on failure **Converse + tool use*
 
 Both paths execute semantic concepts in-process via `app/bedrock/runner.py` (RBAC → `resolve` → audit). The model never receives DB credentials.
 
+Identity: FastAPI propagates the demo session’s `{username, role}` (including Bedrock `promptSessionAttributes`). That is **application-context propagation** for concept RBAC and audit — not database-level user impersonation. SQL still runs on the shared app connection pool.
+
 ## Env vars
 
 | Variable | Purpose |
@@ -25,6 +27,7 @@ Create an action group named **`SemanticTools`** with **Return control** (functi
 - `coverage_by_type` — param `coverage_type` (string, required)
 - `open_claims` — no params
 - `claim_summary` — params `policy_id`, `customer_name` (at least one)
+- `claims_by_damage_type` — param `damage_type` (string, required; JSONB `claim_details->>'damage_type'`)
 
 FastAPI handles function results locally; the Agent does **not** need a public URL to call `/tools/*` for this POC.
 

@@ -34,12 +34,13 @@ CREATE TABLE coverages (
 );
 
 CREATE TABLE claims (
-    claim_id     TEXT PRIMARY KEY,
-    policy_id    TEXT NOT NULL REFERENCES policies (policy_id),
-    status       TEXT NOT NULL CHECK (status IN ('OPEN', 'CLOSED', 'IN_REVIEW')),
-    description  TEXT NOT NULL,
-    amount       NUMERIC(12, 2) NOT NULL,
-    filed_date   DATE NOT NULL
+    claim_id       TEXT PRIMARY KEY,
+    policy_id      TEXT NOT NULL REFERENCES policies (policy_id),
+    status         TEXT NOT NULL CHECK (status IN ('OPEN', 'CLOSED', 'IN_REVIEW')),
+    description    TEXT NOT NULL,
+    amount         NUMERIC(12, 2) NOT NULL,
+    filed_date     DATE NOT NULL,
+    claim_details  JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
 CREATE INDEX idx_policies_customer_id ON policies (customer_id);
@@ -47,5 +48,6 @@ CREATE INDEX idx_coverages_policy_id ON coverages (policy_id);
 CREATE INDEX idx_coverages_coverage_type ON coverages (coverage_type);
 CREATE INDEX idx_claims_policy_id ON claims (policy_id);
 CREATE INDEX idx_claims_status ON claims (status);
+CREATE INDEX idx_claims_details ON claims USING GIN (claim_details);
 
 COMMIT;

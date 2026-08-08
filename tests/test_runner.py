@@ -21,7 +21,7 @@ def setup_function() -> None:
 
 
 def test_runner_denies_agent_open_claims() -> None:
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
     with pytest.raises(ToolAccessDenied):
         run_concept(concept="open_claims", params={}, user=user)
     assert list_recent(1)[0].decision == "deny"
@@ -43,6 +43,6 @@ def test_runner_allows_adjuster_mocked() -> None:
 
 
 def test_runner_missing_param() -> None:
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
     with pytest.raises(ToolMissingParameter):
         run_concept(concept="customer_policies", params={}, user=user)

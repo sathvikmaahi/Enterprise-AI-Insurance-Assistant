@@ -54,15 +54,19 @@
   display: inline-flex;
   align-items: center;
   padding: 0.3rem 0.65rem;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   border-radius: 2px;
   border: 1px solid transparent;
+  max-width: 16rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.role-badge--agent {
+.role-badge--csr {
   background: #dbeafe;
   color: #1e3a5f;
   border-color: #93c5fd;

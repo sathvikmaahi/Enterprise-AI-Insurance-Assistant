@@ -1,6 +1,13 @@
 import './Header.css'
 
+const ROLE_LABELS = {
+  csr: 'Customer Service Representative',
+  adjuster: 'Adjuster',
+  manager: 'Manager',
+}
+
 export default function Header({ session, onLogout }) {
+  const roleLabel = ROLE_LABELS[session.role] || session.role
   return (
     <header className="header">
       <div className="header__brand-block">
@@ -8,8 +15,8 @@ export default function Header({ session, onLogout }) {
         {/* <p className="header__sub">Semantic layer · Bedrock · PostgreSQL</p> */}
       </div>
       <div className="header__meta">
-        <span className={`role-badge role-badge--${session.role}`}>
-          {session.role}
+        <span className={`role-badge role-badge--${session.role}`} title={session.role}>
+          {roleLabel}
         </span>
         <span className="header__user">{session.username}</span>
         <button type="button" className="header__logout" onClick={onLogout}>

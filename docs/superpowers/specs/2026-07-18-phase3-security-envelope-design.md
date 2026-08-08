@@ -13,8 +13,8 @@ Add the demo security moments — login, role-based concept access, guardrail bl
 
 **Success criteria (curl-demoable):**
 
-1. Login as Agent / Adjuster / Manager and receive a bearer token + role  
-2. Agent calling `open_claims` → **403 Access denied**  
+1. Login as Customer Service Representative (`csr`) / Adjuster / Manager and receive a bearer token + role  
+2. CSR calling `open_claims` → **403 Access denied**  
 3. Adjuster calling `open_claims` → **200** with rows  
 4. Question `"Delete all customers"` → **400** blocked by guardrail  
 5. `GET /logs` shows allow / deny / blocked entries with latency  
@@ -60,6 +60,7 @@ Client (curl / later React)
 - SQL is generated only by the semantic layer from approved YAML templates  
 - RBAC is enforced at the API boundary **before** `resolve()`  
 - Concept availability depends on the caller's role (not all concepts for everyone)  
+- Identity is **application-context propagation** (`username` / `role` on the request and audit trail); Postgres uses the shared app credential — **not** database-level user impersonation  
 - Bedrock Agent / `POST /ask` are out of scope  
 - No row-level or column-level filters in this phase  
 
@@ -71,7 +72,7 @@ Client (curl / later React)
 
 | Username | Password | Role |
 |---|---|---|
-| `agent` | `agent123` | `agent` |
+| `csr` | `csr123` | `csr` (Customer Service Representative) |
 | `adjuster` | `adjuster123` | `adjuster` |
 | `manager` | `manager123` | `manager` |
 
@@ -101,18 +102,19 @@ Client (curl / later React)
 
 ### Role matrix
 
-| Concept | agent | adjuster | manager |
+| Concept | csr | adjuster | manager |
 |---|---|---|---|
 | `customer_policies` | allow | allow | allow |
 | `policy_premium` | allow | allow | allow |
 | `coverage_by_type` | allow | allow | allow |
 | `open_claims` | **deny** | allow | allow |
 | `claim_summary` | **deny** | allow | allow |
+| `claims_by_damage_type` | **deny** | allow | allow |
 
 ### YAML changes
 
-- `open_claims.yaml` / `claim_summary.yaml`: `allowed_roles` = `[adjuster, manager]` (remove `agent`)  
-- Other concepts keep `[agent, adjuster, manager]`  
+- Claim concepts: `allowed_roles` = `[adjuster, manager]` (no `csr`)  
+- Policy/coverage concepts: `[csr, adjuster, manager]`  
 
 ### Enforcement
 
@@ -196,7 +198,7 @@ Pure function: `check_question(text: str) -> GuardrailResult(allowed: bool, reas
 ```json
 {
   "concept": "customer_policies",
-  "role": "agent",
+  "role": "csr",
   "row_count": 1,
   "rows": []
 }
@@ -279,12 +281,12 @@ Pure function: `check_question(text: str) -> GuardrailResult(allowed: bool, reas
 ## 11. Demo script (Phase 3 checkpoint)
 
 ```bash
-# 1) Login as agent
+# 1) Login as csr (Customer Service Representative)
 curl -s -X POST localhost:8000/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"agent","password":"agent123"}'
+  -d '{"username":"csr","password":"csr123"}'
 
-# 2) Agent denied on open_claims (use token from step 1)
+# 2) CSR denied on open_claims (use token from step 1)
 curl -s -X POST localhost:8000/tools/open_claims \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \

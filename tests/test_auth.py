@@ -14,15 +14,15 @@ client = TestClient(app)
 
 
 def test_issue_and_verify_token_roundtrip() -> None:
-    token = issue_token("agent", "agent")
+    token = issue_token("csr", "csr")
     payload = verify_token(token)
-    assert payload.username == "agent"
-    assert payload.role == "agent"
+    assert payload.username == "csr"
+    assert payload.role == "csr"
     assert payload.exp > int(time.time())
 
 
 def test_verify_rejects_tampered_token() -> None:
-    token = issue_token("agent", "agent")
+    token = issue_token("csr", "csr")
     body, sig = token.split(".", 1)
     tampered = f"{body}x.{sig}"
     with pytest.raises(TokenError):
@@ -30,7 +30,7 @@ def test_verify_rejects_tampered_token() -> None:
 
 
 def test_verify_rejects_expired_token() -> None:
-    token = issue_token("agent", "agent", ttl_seconds=-1)
+    token = issue_token("csr", "csr", ttl_seconds=-1)
     with pytest.raises(TokenError, match="expired"):
         verify_token(token)
 
@@ -38,20 +38,20 @@ def test_verify_rejects_expired_token() -> None:
 def test_login_success() -> None:
     response = client.post(
         "/auth/login",
-        json={"username": "agent", "password": "agent123"},
+        json={"username": "csr", "password": "csr123"},
     )
     assert response.status_code == 200
     body = response.json()
     assert body["token_type"] == "bearer"
-    assert body["role"] == "agent"
-    assert body["username"] == "agent"
+    assert body["role"] == "csr"
+    assert body["username"] == "csr"
     assert body["access_token"]
 
 
 def test_login_invalid_credentials() -> None:
     response = client.post(
         "/auth/login",
-        json={"username": "agent", "password": "wrong"},
+        json={"username": "csr", "password": "wrong"},
     )
     assert response.status_code == 401
     assert "Invalid credentials" in response.json()["detail"]

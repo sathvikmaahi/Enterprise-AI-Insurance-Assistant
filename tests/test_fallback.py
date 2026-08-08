@@ -18,7 +18,7 @@ def test_converse_tool_use_then_answer(monkeypatch) -> None:
     monkeypatch.setenv("BEDROCK_FALLBACK_MODEL_ID", "amazon.nova-lite-v1:0")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
-    user = CurrentUser(username="agent", role="agent")
+    user = CurrentUser(username="csr", role="csr")
     client = MagicMock()
 
     tool_round = {
@@ -51,7 +51,7 @@ def test_converse_tool_use_then_answer(monkeypatch) -> None:
 
     fake_run = ToolRunResult(
         concept="customer_policies",
-        role="agent",
+        role="csr",
         rows=[{"policy_id": "P1001"}],
         row_count=1,
         sql="SELECT 1",

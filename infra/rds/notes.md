@@ -69,9 +69,10 @@ psql "$DATABASE_URL" -c "SELECT customer_id, full_name FROM customers WHERE full
 psql "$DATABASE_URL" -c "SELECT policy_id, premium_amount FROM policies WHERE policy_id = 'P1001';"
 psql "$DATABASE_URL" -c "SELECT coverage_type FROM coverages WHERE policy_id = 'P1001';"
 psql "$DATABASE_URL" -c "SELECT claim_id, status FROM claims WHERE status = 'OPEN';"
+psql "$DATABASE_URL" -c "SELECT claim_id, claim_details->>'damage_type' FROM claims WHERE claim_details->>'damage_type' = 'windshield' LIMIT 5;"
 ```
 
-Expected: John Smith / `C001`, policy `P1001`, a `windshield` coverage, and at least one `OPEN` claim.
+Expected: John Smith / `C001`, policy `P1001`, a `windshield` coverage, at least one `OPEN` claim, and JSONB `claim_details` rows for `damage_type = windshield` (re-run schema + seed after pulling this change).
 
 ## 6. App health check
 
@@ -94,4 +95,5 @@ If `"db":"error"`, check `DATABASE_URL`, security group IP, and that schema/seed
 - Strong master password; only in `.env`
 - SG: inbound `5432` from your IP only
 - Bedrock / the Agent never receive `DATABASE_URL`
+- App uses one service DB user via the pool; end-user `{username, role}` is **application context** for RBAC/audit, not Postgres impersonation
 - No writes via the assistant in this POC (read-only demo path)

@@ -20,7 +20,7 @@ from app.semantic.resolver import (
 CONCEPTS_DIR = Path(__file__).resolve().parents[1] / "app" / "semantic" / "concepts"
 
 
-def test_load_concepts_finds_five_demo_concepts() -> None:
+def test_load_concepts_finds_demo_concepts() -> None:
     concepts = load_concepts(CONCEPTS_DIR)
     names = set(concepts)
     assert names == {
@@ -29,13 +29,14 @@ def test_load_concepts_finds_five_demo_concepts() -> None:
         "open_claims",
         "coverage_by_type",
         "claim_summary",
+        "claims_by_damage_type",
     }
 
 
 def test_load_concepts_rejects_missing_sql(tmp_path: Path) -> None:
     bad = tmp_path / "broken.yaml"
     bad.write_text(
-        "name: broken\ndescription: x\nparams: []\nallowed_roles: [agent]\nresponse_fields: []\n",
+        "name: broken\ndescription: x\nparams: []\nallowed_roles: [csr]\nresponse_fields: []\n",
         encoding="utf-8",
     )
     with pytest.raises(ConceptLoadError, match="sql"):
@@ -100,10 +101,30 @@ def test_claim_summary_requires_policy_id_or_customer_name() -> None:
         resolve("claim_summary", {})
 
 
+def test_claims_by_damage_type_uses_jsonb_filter() -> None:
+    concepts = load_concepts(CONCEPTS_DIR)
+    concept = concepts["claims_by_damage_type"]
+    assert "claim_details->>'damage_type'" in concept.sql
+    assert "csr" not in concept.allowed_roles
+    assert "adjuster" in concept.allowed_roles
+    fake_rows = [
+        {
+            "claim_id": "CLM-001",
+            "damage_type": "windshield",
+            "severity": "moderate",
+            "claim_details": {"damage_type": "windshield", "severity": "moderate"},
+        }
+    ]
+    with patch("app.semantic.resolver.fetch_all", return_value=fake_rows) as mock_fetch:
+        result = resolve("claims_by_damage_type", {"damage_type": "windshield"})
+    assert result.rows[0]["claim_id"] == "CLM-001"
+    assert mock_fetch.call_args.args[1]["damage_type"] == "windshield"
+
+
 def test_allowed_roles_metadata_and_resolve_stays_role_agnostic() -> None:
     """YAML carries roles; resolve() itself does not enforce (API/RBAC does)."""
     concepts = load_concepts(CONCEPTS_DIR)
-    assert "agent" not in concepts["open_claims"].allowed_roles
+    assert "csr" not in concepts["open_claims"].allowed_roles
     assert "adjuster" in concepts["open_claims"].allowed_roles
     fake_rows = [{"claim_id": "CLM-001", "status": "OPEN"}]
     with patch("app.semantic.resolver.fetch_all", return_value=fake_rows):

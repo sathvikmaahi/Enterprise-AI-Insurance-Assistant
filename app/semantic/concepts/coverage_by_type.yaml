@@ -21,7 +21,7 @@ sql: |
   WHERE cov.coverage_type = %(coverage_type)s
   ORDER BY p.policy_id, cov.coverage_id
 allowed_roles:
-  - agent
+  - csr
   - adjuster
   - manager
 response_fields:

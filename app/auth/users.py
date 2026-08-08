@@ -13,7 +13,7 @@ class DemoUser:
 
 
 DEMO_USERS: dict[str, DemoUser] = {
-    "agent": DemoUser(username="agent", password="agent123", role="agent"),
+    "csr": DemoUser(username="csr", password="csr123", role="csr"),
     "adjuster": DemoUser(username="adjuster", password="adjuster123", role="adjuster"),
     "manager": DemoUser(username="manager", password="manager123", role="manager"),
 }

@@ -39,7 +39,7 @@ def test_tools_require_auth() -> None:
 
 
 def test_agent_denied_open_claims() -> None:
-    token = _login("agent", "agent123")
+    token = _login("csr", "csr123")
     response = client.post(
         "/tools/open_claims",
         json={"params": {}},
@@ -78,7 +78,7 @@ def test_adjuster_allowed_open_claims_mocked() -> None:
 
 
 def test_guardrail_blocks_delete_question() -> None:
-    token = _login("agent", "agent123")
+    token = _login("csr", "csr123")
     response = client.post(
         "/tools/customer_policies",
         json={
@@ -93,7 +93,7 @@ def test_guardrail_blocks_delete_question() -> None:
 
 
 def test_missing_param_returns_422() -> None:
-    token = _login("agent", "agent123")
+    token = _login("csr", "csr123")
     response = client.post(
         "/tools/customer_policies",
         json={"params": {}},
@@ -104,7 +104,7 @@ def test_missing_param_returns_422() -> None:
 
 
 def test_customer_policies_success_mocked() -> None:
-    token = _login("agent", "agent123")
+    token = _login("csr", "csr123")
     fake = ResolveResult(
         concept="customer_policies",
         rows=[
@@ -131,11 +131,11 @@ def test_logs_requires_auth_and_returns_entries() -> None:
     assert client.get("/logs").status_code == 401
     token = _login("manager", "manager123")
     # create an audit entry via denied call
-    agent_token = _login("agent", "agent123")
+    csr_token = _login("csr", "csr123")
     client.post(
         "/tools/open_claims",
         json={"params": {}},
-        headers={"Authorization": f"Bearer {agent_token}"},
+        headers={"Authorization": f"Bearer {csr_token}"},
     )
     response = client.get(
         "/logs",

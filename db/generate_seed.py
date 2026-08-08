@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 
 from faker import Faker
 
@@ -30,18 +32,17 @@ HOME_COVERAGES = (
 )
 CLAIM_STATUSES = ("OPEN", "CLOSED", "IN_REVIEW")
 CLAIM_TEMPLATES = (
-    "Windshield crack after highway debris",
-    "Minor bumper scratch repaired",
-    "Roof leak after storm",
-    "Side mirror damage in parking lot",
-    "Hail damage to vehicle body panels",
-    "Water damage from burst pipe",
-    "Theft of personal property from vehicle",
-    "Rear-end collision at intersection",
-    "Fallen tree damaged roof section",
-    "Glass breakage from rock chip",
+    ("Windshield crack after highway debris", "windshield", "moderate"),
+    ("Minor bumper scratch repaired", "collision", "low"),
+    ("Roof leak after storm", "storm", "high"),
+    ("Side mirror damage in parking lot", "collision", "low"),
+    ("Hail damage to vehicle body panels", "hail", "moderate"),
+    ("Water damage from burst pipe", "water", "high"),
+    ("Theft of personal property from vehicle", "theft", "moderate"),
+    ("Rear-end collision at intersection", "collision", "high"),
+    ("Fallen tree damaged roof section", "storm", "high"),
+    ("Glass breakage from rock chip", "windshield", "low"),
 )
-
 fake = Faker()
 Faker.seed(SEED)
 fake.seed_instance(SEED)
@@ -57,6 +58,18 @@ def sql_date(value: date) -> str:
 
 def sql_money(value: float) -> str:
     return f"{value:.2f}"
+
+
+def sql_jsonb(value: dict[str, Any]) -> str:
+    return sql_str(json.dumps(value, separators=(",", ":"))) + "::jsonb"
+
+
+def claim_details(damage_type: str, severity: str, photos: int = 1) -> dict[str, Any]:
+    return {
+        "damage_type": damage_type,
+        "severity": severity,
+        "photos": photos,
+    }
 
 
 def demo_customers() -> list[tuple]:
@@ -95,6 +108,7 @@ def demo_claims() -> list[tuple]:
             "Windshield crack after highway debris",
             420.00,
             date(2026, 5, 10),
+            claim_details("windshield", "moderate", photos=2),
         ),
         (
             "CLM-002",
@@ -103,6 +117,7 @@ def demo_claims() -> list[tuple]:
             "Minor bumper scratch repaired",
             650.00,
             date(2025, 11, 2),
+            claim_details("collision", "low", photos=1),
         ),
         (
             "CLM-003",
@@ -111,6 +126,7 @@ def demo_claims() -> list[tuple]:
             "Roof leak after storm",
             4800.00,
             date(2026, 6, 20),
+            claim_details("storm", "high", photos=3),
         ),
         (
             "CLM-004",
@@ -119,6 +135,7 @@ def demo_claims() -> list[tuple]:
             "Side mirror damage in parking lot",
             310.00,
             date(2026, 7, 1),
+            claim_details("collision", "low", photos=1),
         ),
     ]
 
@@ -190,14 +207,17 @@ def gen_claims(n: int, policy_ids: list[str]) -> list[tuple]:
     while len(rows) < n:
         filed = fake.date_between(start_date=date(2024, 1, 1), end_date=date(2026, 7, 15))
         amount = round(fake.pyfloat(min_value=150, max_value=12000, right_digits=2), 2)
+        description, damage_type, severity = fake.random_element(CLAIM_TEMPLATES)
+        photos = fake.random_int(min=0, max=5)
         rows.append(
             (
                 f"CLM-{i:03d}",
                 fake.random_element(policy_ids),
                 fake.random_element(CLAIM_STATUSES),
-                fake.random_element(CLAIM_TEMPLATES),
+                description,
                 amount,
                 filed,
+                claim_details(damage_type, severity, photos=photos),
             )
         )
         i += 1
@@ -255,19 +275,20 @@ def format_coverages(rows: list[tuple]) -> str:
 
 def format_claims(rows: list[tuple]) -> str:
     values = ",\n".join(
-        "    ({}, {}, {}, {}, {}, {})".format(
+        "    ({}, {}, {}, {}, {}, {}, {})".format(
             sql_str(cid),
             sql_str(pid),
             sql_str(status),
             sql_str(desc),
             sql_money(amount),
             sql_date(filed),
+            sql_jsonb(details),
         )
-        for cid, pid, status, desc, amount, filed in rows
+        for cid, pid, status, desc, amount, filed, details in rows
     )
     return (
         "INSERT INTO claims (\n"
-        "    claim_id, policy_id, status, description, amount, filed_date\n"
+        "    claim_id, policy_id, status, description, amount, filed_date, claim_details\n"
         f") VALUES\n{values};\n"
     )
 
