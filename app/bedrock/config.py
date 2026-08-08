@@ -40,3 +40,25 @@ def agent_configured() -> bool:
 
 def fallback_configured() -> bool:
     return bool(fallback_model_id())
+
+
+def guardrail_id() -> str:
+    return os.getenv("BEDROCK_GUARDRAIL_ID", "").strip()
+
+
+def guardrail_version() -> str:
+    return os.getenv("BEDROCK_GUARDRAIL_VERSION", "DRAFT").strip() or "DRAFT"
+
+
+def guardrail_configured() -> bool:
+    return bool(guardrail_id())
+
+
+def guardrail_config_dict() -> dict[str, str] | None:
+    """Return Converse guardrailConfig when env is set."""
+    if not guardrail_configured():
+        return None
+    return {
+        "guardrailIdentifier": guardrail_id(),
+        "guardrailVersion": guardrail_version(),
+    }
