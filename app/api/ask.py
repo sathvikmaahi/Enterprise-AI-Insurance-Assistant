@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.bedrock import AskOrchestrationError, ask
-from app.guardrails import check_question
+from app.guardrails import check_input, check_question
 from app.logging.audit import record
 
 router = APIRouter(tags=["ask"])
@@ -59,6 +59,26 @@ def ask_question(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"detail": "Blocked by guardrail", "reason": guard.reason},
+        )
+
+    bedrock_guard = check_input(question)
+    if not bedrock_guard.allowed:
+        record(
+            username=user.username,
+            role=user.role,
+            concept=None,
+            params={"question": question},
+            sql=None,
+            decision="blocked",
+            reason=bedrock_guard.reason,
+            latency_ms=latency_ms(),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "detail": "Blocked by Bedrock Guardrails",
+                "reason": bedrock_guard.reason,
+            },
         )
 
     try:

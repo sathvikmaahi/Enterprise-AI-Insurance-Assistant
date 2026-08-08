@@ -86,9 +86,14 @@ React (Vite)  →  FastAPI  →  Amazon Bedrock Agent
 | Item | Notes |
 |---|---|
 | Amazon Cognito | Real SSO; demo auth stands in for now |
-| Bedrock Guardrails | Policy + content safety around Agent replies |
 | Databricks / Snowflake | Future warehouses behind the same semantic API |
 | CloudWatch | Optional request/audit metrics and logs |
+
+## Recently added
+
+| Item | Notes |
+|---|---|
+| Bedrock Guardrails | Managed topic/content/word policies on `/ask` — see `infra/bedrock/guardrails.md` |
 
 ---
 

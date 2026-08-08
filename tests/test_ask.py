@@ -47,6 +47,31 @@ def test_ask_guardrail_blocks() -> None:
     assert list_recent(1)[0].decision == "blocked"
 
 
+def test_ask_bedrock_guardrail_blocks() -> None:
+    from app.guardrails.bedrock import BedrockGuardrailResult
+    from app.guardrails.rules import GuardrailResult
+
+    token = _login("agent", "agent123")
+    blocked = BedrockGuardrailResult(
+        allowed=False,
+        reason="Denied topic: Financial advice",
+    )
+    allowed = GuardrailResult(allowed=True)
+    with (
+        patch("app.api.ask.check_question", return_value=allowed),
+        patch("app.api.ask.check_input", return_value=blocked),
+    ):
+        response = client.post(
+            "/ask",
+            json={"question": "Should I invest my savings in index funds?"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 400
+    body = response.json()
+    assert "bedrock guardrails" in str(body).lower()
+    assert list_recent(1)[0].decision == "blocked"
+
+
 def test_ask_agent_path() -> None:
     token = _login("agent", "agent123")
     fake = AskResult(

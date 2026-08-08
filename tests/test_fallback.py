@@ -68,3 +68,49 @@ def test_converse_tool_use_then_answer(monkeypatch) -> None:
     assert result.answer == "John has policy P1001."
     assert result.tools_used == ["customer_policies"]
     assert client.converse.call_count == 2
+
+
+def test_converse_passes_guardrail_config(monkeypatch) -> None:
+    monkeypatch.setenv("BEDROCK_FALLBACK_MODEL_ID", "amazon.nova-lite-v1:0")
+    monkeypatch.setenv("BEDROCK_GUARDRAIL_ID", "gr-test")
+    monkeypatch.setenv("BEDROCK_GUARDRAIL_VERSION", "1")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+
+    user = CurrentUser(username="agent", role="agent")
+    client = MagicMock()
+    client.converse.return_value = {
+        "stopReason": "end_turn",
+        "output": {
+            "message": {
+                "role": "assistant",
+                "content": [{"text": "Hello."}],
+            }
+        },
+    }
+
+    invoke_fallback("Hi", user, client_factory=lambda: client)
+    assert client.converse.call_args.kwargs["guardrailConfig"] == {
+        "guardrailIdentifier": "gr-test",
+        "guardrailVersion": "1",
+    }
+
+
+def test_converse_guardrail_intervention_returns_message(monkeypatch) -> None:
+    monkeypatch.setenv("BEDROCK_FALLBACK_MODEL_ID", "amazon.nova-lite-v1:0")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+
+    user = CurrentUser(username="agent", role="agent")
+    client = MagicMock()
+    client.converse.return_value = {
+        "stopReason": "guardrail_intervened",
+        "output": {
+            "message": {
+                "role": "assistant",
+                "content": [{"text": "Sorry, I cannot answer that."}],
+            }
+        },
+    }
+
+    result = invoke_fallback("bad question", user, client_factory=lambda: client)
+    assert result.answer == "Sorry, I cannot answer that."
+    assert result.tools_used == []

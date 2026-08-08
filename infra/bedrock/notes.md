@@ -39,6 +39,8 @@ Credentials: standard AWS chain (`AWS_PROFILE`, env keys, or instance role). You
 | `BEDROCK_AGENT_ALIAS_ID` | Published alias |
 | `BEDROCK_FALLBACK_MODEL_ID` | e.g. `amazon.nova-lite-v1:0` |
 | `BEDROCK_FORCE_FALLBACK` | `true` to skip Agent and demo the fallback story |
+| `BEDROCK_GUARDRAIL_ID` | Bedrock Guardrails ID (optional; see `infra/bedrock/guardrails.md`) |
+| `BEDROCK_GUARDRAIL_VERSION` | Guardrail version or `DRAFT` |
 
 ## Action group functions
 

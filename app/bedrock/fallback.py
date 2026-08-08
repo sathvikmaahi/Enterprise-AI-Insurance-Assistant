@@ -20,6 +20,7 @@ from app.bedrock.runner import (
 )
 from app.bedrock.tool_payload import build_success_payload, enrich_answer_if_needed
 from app.bedrock.tool_specs import converse_tool_config
+from app.bedrock.config import guardrail_config_dict
 
 logger = logging.getLogger(__name__)
 
@@ -90,21 +91,32 @@ def invoke_fallback(
         {"role": "user", "content": [{"text": question}]},
     ]
     tool_config = converse_tool_config()
+    guardrail_config = guardrail_config_dict()
 
     try:
         for _ in range(MAX_TOOL_ROUNDS + 1):
-            response = client.converse(
-                modelId=config.fallback_model_id(),
-                messages=messages,
-                system=[{"text": SYSTEM_PROMPT}],
-                toolConfig=tool_config,
-            )
+            converse_kwargs: dict[str, Any] = {
+                "modelId": config.fallback_model_id(),
+                "messages": messages,
+                "system": [{"text": SYSTEM_PROMPT}],
+                "toolConfig": tool_config,
+            }
+            if guardrail_config is not None:
+                converse_kwargs["guardrailConfig"] = guardrail_config
+
+            response = client.converse(**converse_kwargs)
             output = response.get("output", {}).get("message")
             if not output:
                 raise FallbackInvokeError("Converse response missing output message")
 
             messages.append(output)
             stop_reason = response.get("stopReason")
+
+            if stop_reason == "guardrail_intervened":
+                answer = _extract_text(output)
+                if not answer:
+                    raise FallbackInvokeError("Guardrail intervened with empty answer")
+                return FallbackResult(answer=answer, tools_used=tools_used)
 
             if stop_reason in {"end_turn", "max_tokens", "stop_sequence"}:
                 answer = _extract_text(output)
